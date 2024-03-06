@@ -1,4 +1,4 @@
-const API_BASE_URL = ``; // TODO (willmeyers): use process.env to ref api url
+const API_BASE_URL = `localhost:8080`; // TODO (willmeyers): use process.env to ref api url
 
 export const executeSearch = async ({
   event,
@@ -24,5 +24,6 @@ export const searchResults = async ({ taskID }: { taskID: number }) => {
     `ws://${API_BASE_URL}/search:results?taskID=${taskID}`,
   );
 
+  return ws;
   // TODO (willmeyers): listen on new websocket connection and yield results
 };

@@ -41,7 +41,6 @@ func (s *APIGatewayLambdaService) InvokeFunction(event LambdaEvent) {
 
 			var response LambdaResponse
 
-			// TODO (willmeyers): Investigate segfault...
 			payload := map[string]string{
 				"originCode":      event.OriginCode,
 				"destinationCode": event.DestinationCode,

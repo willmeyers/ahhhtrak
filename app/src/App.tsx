@@ -9,7 +9,11 @@ function App() {
     days: string;
   }) => {
     const p = await executeSearch({ event: values });
-    await searchResults({ taskID: p.taskID });
+    const ws = await searchResults({ taskID: p.taskID });
+
+    ws.addEventListener("open", (event) => console.log("open", event));
+    ws.addEventListener("message", (event) => console.log("msg", event));
+    ws.addEventListener("close", (event) => console.log("close", event));
   };
 
   return (

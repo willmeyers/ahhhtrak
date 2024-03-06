@@ -75,7 +75,6 @@ func (handler *ServerHandler) SearchResultWSHandler(w http.ResponseWriter, r *ht
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	defer wsConn.Close()
 
 	taskIDParam := r.URL.Query().Get("taskID")
 	if taskIDParam == "" {
@@ -112,16 +111,14 @@ func (handler *ServerHandler) SearchResultWSHandler(w http.ResponseWriter, r *ht
 	go func() {
 		handler.Api.InvokeFunction(taskRequestEvent)
 		wg.Done()
+		wsConn.Close()
 	}()
 
-	go func() {
-		for response := range handler.Api.Responses {
-			handler.Mutex.Lock()
-			if err := wsConn.WriteJSON(response); err != nil {
-				wsConn.WriteMessage(0, []byte(err.Error()))
-			}
-			handler.Mutex.Unlock()
+	for response := range handler.Api.Responses {
+		handler.Mutex.Lock()
+		if err := wsConn.WriteJSON(response); err != nil {
+			wsConn.WriteMessage(0, []byte(err.Error()))
 		}
-	}()
-
+		handler.Mutex.Unlock()
+	}
 }

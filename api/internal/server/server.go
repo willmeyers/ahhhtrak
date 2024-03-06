@@ -35,7 +35,8 @@ func NewServer(address string) *Server {
 	})
 
 	api := &services.APIGatewayLambdaService{
-		Endpoint: cfg.ApiGatewayEndpoint,
+		Endpoint:   cfg.ApiGatewayEndpoint,
+		HttpClient: &http.Client{},
 	}
 
 	s := &Server{
