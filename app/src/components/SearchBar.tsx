@@ -112,6 +112,11 @@ export const SearchBar = ({
         className={`${formContext.originCode && formContext.destinationCode && formContext.days ? "border border-blue-500" : "border"} flex h-16`}
       >
         <button
+          disabled={
+            !formContext.originCode ||
+            !formContext.destinationCode ||
+            !formContext.days
+          }
           className={`${formContext.originCode && formContext.destinationCode && formContext.days ? "bg-blue-500" : "bg-gray-300"} m-1 w-full px-3 font-mono text-xl text-white`}
           type="submit"
         >

@@ -126,7 +126,8 @@ export const DaySelector = ({ onChange }: { onChange: CallableFunction }) => {
   useEffect(() => {
     setValue("");
 
-    for (const date of activeDays) {
+    let sortedDays = activeDays.sort();
+    for (const date of sortedDays) {
       const offset = date.getTimezoneOffset();
       const awareDate = new Date(date.getTime() - offset * 60 * 1000);
       setValue((prev) =>
