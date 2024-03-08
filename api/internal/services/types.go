@@ -3,7 +3,7 @@ package services
 type LambdaEvent struct {
 	OriginCode      string `json:"originCode"`
 	DestinationCode string `json:"destinationCode"`
-	Days            string `json:"days"`
+	DateString      string `json:"dateString"`
 }
 
 type LambdaResponse struct {
@@ -12,9 +12,11 @@ type LambdaResponse struct {
 }
 
 type Body struct {
-	Message   string   `json:"message"`
-	Timestamp string   `json:"timestamp"`
+	Message   string `json:"message"`
+	Timestamp string `json:"timestamp"`
+	Event     LambdaEvent
 	Response  Response `json:"response"`
+	Reason    string   `json:"reason"`
 }
 
 type Response struct {

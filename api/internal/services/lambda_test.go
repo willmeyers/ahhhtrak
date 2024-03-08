@@ -49,15 +49,14 @@ func TestInvokeFunction(t *testing.T) {
 
 	go func() {
 		service.InvokeFunction(event)
+		for response := range service.Responses {
+			t.Log("got", response.StatusCode)
+			if response.StatusCode != 200 {
+				t.Errorf("got %d want %d in response.StatusCode", response.StatusCode, 200)
+			}
+		}
 		wg.Done()
 	}()
 
 	wg.Wait()
-
-	for response := range service.Responses {
-		t.Log("got", response.StatusCode)
-		if response.StatusCode != 200 {
-			t.Errorf("got %d want %d in response.StatusCode", response.StatusCode, 200)
-		}
-	}
 }

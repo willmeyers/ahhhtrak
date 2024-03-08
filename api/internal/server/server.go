@@ -3,8 +3,8 @@ package server
 import (
 	"glamtrak_api/internal/config"
 	"glamtrak_api/internal/services"
-	"net/http"
 	"log"
+	"net/http"
 
 	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
@@ -15,7 +15,7 @@ type Server struct {
 	Redis        *redis.Client
 	Config       *config.Config
 	HttpUpgrader *websocket.Upgrader
-	Api          *services.APIGatewayLambdaService
+	Lambda       *services.LambdaService
 	routes       map[string]http.Handler
 }
 
@@ -34,16 +34,15 @@ func NewServer(address string) *Server {
 		DB:       0,
 	})
 
-	api := &services.APIGatewayLambdaService{
-		Endpoint:   cfg.ApiGatewayEndpoint,
-		HttpClient: &http.Client{},
+	lambda := &services.LambdaService{
+		Config: *cfg,
 	}
 
 	s := &Server{
 		Mux:    *http.NewServeMux(),
 		Config: cfg,
 		Redis:  rdb,
-		Api:    api,
+		Lambda: lambda,
 		HttpUpgrader: &websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,

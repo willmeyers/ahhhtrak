@@ -1,80 +1,58 @@
 package services
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"strings"
-	"sync"
+	"log"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/lambda"
+
+	"glamtrak_api/internal/config"
 )
 
-// This is mainly defined for testing purposes, as it's simple to mock
-type HTTPClient interface {
-	Do(req *http.Request) (*http.Response, error)
+type LambdaService struct {
+	Responses chan LambdaResponse
+	Config    config.Config
 }
 
-type APIGatewayLambdaService struct {
-	Responses  chan LambdaResponse
-	Endpoint   string
-	HttpClient HTTPClient
-}
+func (s *LambdaService) InvokeFunction(event LambdaEvent) {
+	log.Println("sent out", event.OriginCode, event.DestinationCode, event.DateString)
 
-func (s *APIGatewayLambdaService) InvokeFunction(event LambdaEvent) {
-	var formattedDaySlice []string
-	requestDaySlice := strings.Fields(event.Days)
-	for _, day := range requestDaySlice {
-		parts := strings.Split(day, "-")
-		if len(parts) == 3 {
-			reformattedDate := fmt.Sprintf("%s/%s/%s", parts[2], parts[1], parts[0])
-			formattedDaySlice = append(formattedDaySlice, reformattedDate)
-		}
+	var response LambdaResponse
+	payload, err := json.Marshal(event)
+	if err != nil {
+		fmt.Println("Error marshaling event:", err)
+		return
 	}
 
-	s.Responses = make(chan LambdaResponse, len(formattedDaySlice))
-	var wg sync.WaitGroup
-	wg.Add(len(formattedDaySlice))
-
-	for _, date := range formattedDaySlice {
-		go func(date string) {
-			defer wg.Done()
-
-			var response LambdaResponse
-
-			payload := map[string]string{
-				"originCode":      event.OriginCode,
-				"destinationCode": event.DestinationCode,
-				"dateString":      date,
-			}
-			payloadBytes, err := json.Marshal(payload)
-			if err != nil {
-				fmt.Println("Error marshaling payload:", err)
-				return
-			}
-
-			req, err := http.NewRequest("POST", s.Endpoint, bytes.NewBuffer(payloadBytes))
-			if err != nil {
-				fmt.Println("Error creating request:", err)
-				return
-			}
-			req.Header.Set("Content-Type", "application/json")
-
-			resp, err := s.HttpClient.Do(req)
-			if err != nil {
-				fmt.Println("Error sending request:", err)
-				return
-			}
-			defer resp.Body.Close()
-
-			if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-				fmt.Println("Error decoding response:", err)
-				return
-			}
-
-			s.Responses <- response
-		}(date)
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(s.Config.AwsRegion)},
+	)
+	if err != nil {
+		fmt.Println("Error creating AWS session:", err)
+		return
 	}
 
-	wg.Wait()
-	close(s.Responses)
+	svc := lambda.New(sess)
+
+	invokeInput := &lambda.InvokeInput{
+		FunctionName:   aws.String(s.Config.AwsLambdaFunctionName),
+		InvocationType: aws.String("RequestResponse"),
+		Payload:        payload,
+	}
+
+	result, err := svc.Invoke(invokeInput)
+	if err != nil {
+		fmt.Println("Error invoking Lambda function:", err)
+		return
+	}
+
+	if err := json.Unmarshal(result.Payload, &response); err != nil {
+		fmt.Println("Error unmarshaling Lambda response:", err)
+		return
+	}
+
+	s.Responses <- response
 }

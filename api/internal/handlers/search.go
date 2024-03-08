@@ -9,20 +9,27 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
+type requestParamers struct {
+	OriginCode      string `json:"originCode"`
+	DestinationCode string `json:"destinationCode"`
+	Days            string `json:"days"`
+}
+
 type obtainSearchTaskHandlerResponse struct {
-	Status            string               `json:"status"`
-	TaskID            string               `json:"taskID"`
-	RequestParameters services.LambdaEvent `json:"requestParameters"`
+	Status            string          `json:"status"`
+	TaskID            string          `json:"taskID"`
+	RequestParameters requestParamers `json:"requestParameters"`
 }
 
 func (handler *ServerHandler) ObtainSearchTaskHandler(w http.ResponseWriter, r *http.Request) {
-	var requestBody services.LambdaEvent
+	var requestBody requestParamers
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -45,9 +52,6 @@ func (handler *ServerHandler) ObtainSearchTaskHandler(w http.ResponseWriter, r *
 	}
 
 	taskID := rand.Uint64()
-
-	log.Println("generated:", taskID)
-	log.Printf("key: task_request:%v\n", taskID)
 
 	requestBodyJSON, err := json.Marshal(&requestBody)
 	if err != nil {
@@ -75,6 +79,7 @@ func (handler *ServerHandler) SearchResultWSHandler(w http.ResponseWriter, r *ht
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	defer wsConn.Close()
 
 	taskIDParam := r.URL.Query().Get("taskID")
 	if taskIDParam == "" {
@@ -87,7 +92,7 @@ func (handler *ServerHandler) SearchResultWSHandler(w http.ResponseWriter, r *ht
 		return
 	}
 
-	var taskRequestEvent services.LambdaEvent
+	var taskRequest requestParamers
 	requestTaskKey := fmt.Sprintf("task_request:%v", taskID)
 	requestTaskBody, err := handler.Redis.Get(context.Background(), requestTaskKey).Result()
 	if err == redis.Nil {
@@ -96,28 +101,59 @@ func (handler *ServerHandler) SearchResultWSHandler(w http.ResponseWriter, r *ht
 	} else if err != nil {
 		log.Println("error", taskID, requestTaskKey)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-	} else {
-		log.Println("success...", taskID, requestTaskKey)
 	}
 
-	if err := json.Unmarshal([]byte(requestTaskBody), &taskRequestEvent); err != nil {
+	if err := json.Unmarshal([]byte(requestTaskBody), &taskRequest); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
+	var formattedDaySlice []string
+	requestDaySlice := strings.Fields(taskRequest.Days)
+	for _, day := range requestDaySlice {
+		parts := strings.Split(day, "-")
+		if len(parts) == 3 {
+			month := parts[1]
+			day := parts[2]
+			year := parts[0]
+
+			if month[0] == '0' {
+				month = month[1:]
+			}
+			if day[0] == '0' {
+				day = day[1:]
+			}
+			reformattedDate := fmt.Sprintf("%s/%s/%s", month, day, year)
+			formattedDaySlice = append(formattedDaySlice, reformattedDate)
+		}
+	}
+
+	handler.Lambda.Responses = make(chan services.LambdaResponse, len(formattedDaySlice))
 	var wg sync.WaitGroup
-	wg.Add(1)
+	for _, date := range formattedDaySlice {
+		wg.Add(1)
+		go func(date string) {
+			defer wg.Done()
+			event := services.LambdaEvent{
+				OriginCode:      taskRequest.OriginCode,
+				DestinationCode: taskRequest.DestinationCode,
+				DateString:      date,
+			}
+
+			handler.Lambda.InvokeFunction(event)
+		}(date)
+	}
 
 	go func() {
-		handler.Api.InvokeFunction(taskRequestEvent)
-		wg.Done()
-		wsConn.Close()
+		wg.Wait()
+		close(handler.Lambda.Responses)
 	}()
 
-	for response := range handler.Api.Responses {
+	for response := range handler.Lambda.Responses {
 		handler.Mutex.Lock()
 		if err := wsConn.WriteJSON(response); err != nil {
-			wsConn.WriteMessage(0, []byte(err.Error()))
+			log.Println("Error sending response:", err)
+			break
 		}
 		handler.Mutex.Unlock()
 	}

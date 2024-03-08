@@ -24,7 +24,7 @@ func (s *Server) registerRoutes() {
 	handler := handlers.ServerHandler{
 		Redis:        s.Redis,
 		HttpUpgrader: s.HttpUpgrader,
-		Api:          s.Api,
+		Lambda:       s.Lambda,
 		Mutex:        sync.Mutex{},
 	}
 

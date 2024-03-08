@@ -7,10 +7,11 @@ import (
 )
 
 type Config struct {
-	ServerAddr           string
-	RedisAddr            string
-	ApiGatewayEndpoint   string
-	RequestThrottleLimit int64
+	ServerAddr            string
+	RedisAddr             string
+	RequestThrottleLimit  int64
+	AwsRegion             string
+	AwsLambdaFunctionName string
 }
 
 func LoadConfig() *Config {
@@ -20,9 +21,10 @@ func LoadConfig() *Config {
 	}
 
 	return &Config{
-		ServerAddr:           os.Getenv("SERVER_ADDRESS"),
-		RedisAddr:            os.Getenv("REDIS_ADDRESS"),
-		ApiGatewayEndpoint:   os.Getenv("API_GATEWAY_ENDPOINT"),
-		RequestThrottleLimit: requestLimit,
+		AwsLambdaFunctionName: os.Getenv("AWS_LAMBDA_FUNCTION_NAME"),
+		AwsRegion:             os.Getenv("AWS_REGION"),
+		ServerAddr:            os.Getenv("SERVER_ADDRESS"),
+		RedisAddr:             os.Getenv("REDIS_ADDRESS"),
+		RequestThrottleLimit:  requestLimit,
 	}
 }

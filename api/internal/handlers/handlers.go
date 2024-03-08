@@ -11,6 +11,6 @@ import (
 type ServerHandler struct {
 	Redis        *redis.Client
 	HttpUpgrader *websocket.Upgrader
-	Api          *services.APIGatewayLambdaService
+	Lambda       *services.LambdaService
 	Mutex        sync.Mutex
 }
