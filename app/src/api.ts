@@ -1,6 +1,38 @@
 import { ResultFilters, Trip } from "./types";
 
-const API_BASE_URL = `localhost:8080`; // TODO (willmeyers): use process.env to ref api url
+const API_BASE_DOMAIN = "api.ahhhtrak.com";
+
+const API_BASE_URL = "https://api.ahhhtrak.com";
+
+export const healthCheck = async (): Promise<{
+  status: number;
+  message: string;
+}> => {
+  let status = 500;
+  let message = "Internal Server Error.";
+
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}/health`, {
+      method: "GET",
+    });
+  } catch (e) {
+    return { status, message };
+  }
+
+  if (response.status === 503) {
+    status = response.status;
+    message =
+      "Ahhhtrak cannot connect to its external proxy service and deliver you results.";
+  }
+
+  if (response.status === 200) {
+    status = 200;
+    message = "";
+  }
+
+  return { status, message };
+};
 
 export const executeSearch = async ({
   event,
@@ -11,7 +43,7 @@ export const executeSearch = async ({
     days: string;
   };
 }) => {
-  const response = await fetch(`http://${API_BASE_URL}/search:execute`, {
+  const response = await fetch(`${API_BASE_URL}/search:execute`, {
     method: "POST",
     body: JSON.stringify(event),
   });
@@ -23,7 +55,7 @@ export const executeSearch = async ({
 
 export const searchResults = async ({ taskID }: { taskID: number }) => {
   const ws = new WebSocket(
-    `ws://${API_BASE_URL}/search:results?taskID=${taskID}`,
+    `ws://${API_BASE_DOMAIN}/search:results?taskID=${taskID}`,
   );
 
   return ws;
@@ -40,7 +72,7 @@ export const filterSearchResults = ({
 
   if (filters.date) {
     filteredResults = results.filter((trip) =>
-      trip.departureDateTime.startsWith(filters.date),
+      trip.departureDateTime.startsWith(filters.date!),
     );
   }
 
@@ -62,17 +94,11 @@ export const filterSearchResults = ({
     switch (filters.sortByAsc) {
       case "fare":
         filteredResults.sort((a, b) => {
-          const fareA = parseInt(
-            a.reservableAccommodations[0].accommodationFare.dollarsAmount.total.replace(
-              /,/g,
-              "",
-            ),
+          const fareA = parseFloat(
+            a.reservableAccommodations[0].accommodationFare.dollarsAmount.total,
           );
-          const fareB = parseInt(
-            b.reservableAccommodations[0].accommodationFare.dollarsAmount.total.replace(
-              /,/g,
-              "",
-            ),
+          const fareB = parseFloat(
+            b.reservableAccommodations[0].accommodationFare.dollarsAmount.total,
           );
           return fareA - fareB;
         });
@@ -93,6 +119,8 @@ export const filterSearchResults = ({
         break;
     }
   }
+
+  console.log(filteredResults);
 
   return filteredResults;
 };

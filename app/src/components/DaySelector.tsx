@@ -116,11 +116,15 @@ export const DaySelector = ({ onChange }: { onChange: CallableFunction }) => {
       activeDays.find((d) => d.toISOString() === date.toISOString()),
     );
 
-    exists
-      ? setActiveDays((prev) =>
-          prev.filter((d) => d.toISOString() !== date.toISOString()),
-        )
-      : setActiveDays((prev) => [...prev, date]);
+    if (exists) {
+      setActiveDays((prev) =>
+        prev.filter((d) => d.toISOString() !== date.toISOString()),
+      );
+    } else {
+      if (activeDays.length < 7) {
+        setActiveDays((prev) => [...prev, date]);
+      }
+    }
   };
 
   useEffect(() => {
@@ -219,11 +223,13 @@ export const DaySelector = ({ onChange }: { onChange: CallableFunction }) => {
               <button
                 type="button"
                 key={`${i.toISOString()}-btn`}
-                className={`${
-                  activeDays.find((d) => d.toISOString() === i.toISOString())
-                    ? "bg-blue-500 text-white hover:bg-blue-500"
-                    : "bg-gray-100"
-                } h-8 w-8 font-mono text-sm hover:bg-blue-300`}
+                disabled={Boolean(i <= new Date())}
+                className={`
+                  ${
+                    activeDays.find((d) => d.toISOString() === i.toISOString())
+                      ? "bg-blue-500 text-white hover:bg-blue-500"
+                      : "bg-gray-100"
+                  } ${Boolean(i <= new Date()) ? "text-gray-300 hover:bg-gray-100" : ""} h-8 w-8 font-mono text-sm hover:bg-blue-300`}
                 onMouseDown={(event) => {
                   event.preventDefault();
                   toggleActiveDate(i);

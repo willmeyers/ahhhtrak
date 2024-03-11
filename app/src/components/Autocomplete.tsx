@@ -74,7 +74,7 @@ export const BasicAutocomplete = ({
             setValue("");
             setSelectedOption(null);
           }}
-          className="flex h-16 w-56 flex-col justify-center border border-blue-500 p-2 font-mono hover:bg-blue-200"
+          className="flex h-16 w-56 flex-col border border-blue-500 p-2 text-left font-mono hover:bg-blue-200"
         >
           <span className="text-xl font-bold">{selectedOption?.code}</span>
           <span className="text-sm text-gray-500">

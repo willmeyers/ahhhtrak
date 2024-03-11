@@ -1,12 +1,9 @@
 import type { Trip } from "../types";
+import arrow from "../assets/arrow.svg";
 
 export const ResultTable = ({ results }: { results: Trip[] }) => {
   const formatTimeFromDate = (date: string) => {
     let d = new Date(date);
-    let h = d.getHours();
-    h = h > 12 ? h - 12 : h;
-    let m = d.getMinutes();
-    // return `${h}:${m < 10 ? "0" + m : m}${} [${h < 10 ? "0" + h : h}:${m < 10 ? "0" + m : m}]`;
     return d
       .toLocaleTimeString()
       .replace("AM", "am")
@@ -16,8 +13,8 @@ export const ResultTable = ({ results }: { results: Trip[] }) => {
   };
 
   return (
-    <table className="w-full max-w-max font-mono">
-      <thead className="bg-blue-500 text-white">
+    <table className="w-full max-w-max border border-blue-500 font-mono">
+      <thead className="bg-blue-500 p-2 text-white">
         <tr className="py-1 text-left">
           <th className="p-3">Date</th>
           <th className="p-3">Departs At</th>
@@ -26,10 +23,13 @@ export const ResultTable = ({ results }: { results: Trip[] }) => {
           <th className="p-3">Fare</th>
         </tr>
       </thead>
-      <tbody>
-        {results.map((r) => (
+      <tbody className="p-2">
+        {results.length === 0 ? (
+          <p className="p-4 text-red-500">No results.</p>
+        ) : null}
+        {results.map((r, idx) => (
           <tr
-            key={`result-${r.departureDateTime}`}
+            key={`result-${r.departureDateTime}-${idx}`}
             className="py-1 hover:bg-blue-50"
           >
             <td className="p-3">
@@ -38,14 +38,21 @@ export const ResultTable = ({ results }: { results: Trip[] }) => {
             <td className="p-3">{formatTimeFromDate(r.departureDateTime)}</td>
             <td className="p-3">{formatTimeFromDate(r.arrivalDateTime)}</td>
             <td className="p-3">
-              {r.legs.map((l) => (
-                <span>
-                  {l.origin.name} via{" "}
-                  <span className="font-bold">{l.travelService.name}</span> to{" "}
-                  {l.destination.name}
-                  {}
-                </span>
-              ))}
+              <ul className="m-0 flex flex-col gap-1 p-0">
+                {r.legs.map((l) => (
+                  <li
+                    key={`leg-${r.departureDateTime}-${l.origin.code}-${l.destination.code}`}
+                    className="flex items-center gap-1 text-xs"
+                  >
+                    <img src={arrow} width="14" />
+                    <abbr title={l.origin.name}>{l.origin.code}</abbr>
+                    <span className="font-semibold">
+                      [{l.travelService.name}]
+                    </span>
+                    <abbr title={l.destination.name}>{l.destination.code}</abbr>
+                  </li>
+                ))}
+              </ul>
             </td>
             <td className="p-3">
               {

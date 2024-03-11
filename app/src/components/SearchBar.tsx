@@ -1,11 +1,21 @@
-import { FormEvent, useEffect, useState } from "react";
+import {
+  FormEvent,
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useState,
+} from "react";
 import { BasicAutocomplete } from "./Autocomplete";
 import { DaySelector } from "./DaySelector";
 import { STATIONS } from "../assets/stations";
 
 export const SearchBar = ({
+  isLoading,
   onSubmit,
+  setDirection,
 }: {
+  isLoading: boolean;
+  setDirection: Dispatch<SetStateAction<"trip" | "reverseTrip">>;
   onSubmit: (values: {
     originCode: string;
     destinationCode: string;
@@ -71,11 +81,13 @@ export const SearchBar = ({
         placeholder="From"
       />
       <button
+        disabled={isLoading}
         type="button"
         onClick={() => {
           const from = fromValue;
           setFromValue(toValue);
           setToValue(from);
+          setDirection((prev) => (prev === "trip" ? "reverseTrip" : "trip"));
         }}
         className="flex h-16 w-16 place-items-center justify-center border"
       >
@@ -115,7 +127,8 @@ export const SearchBar = ({
           disabled={
             !formContext.originCode ||
             !formContext.destinationCode ||
-            !formContext.days
+            !formContext.days ||
+            isLoading
           }
           className={`${formContext.originCode && formContext.destinationCode && formContext.days ? "bg-blue-500" : "bg-gray-300"} m-1 w-full px-3 font-mono text-xl text-white`}
           type="submit"
