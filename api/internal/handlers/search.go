@@ -110,7 +110,16 @@ func (handler *ServerHandler) SearchResultWSHandler(w http.ResponseWriter, r *ht
 
 	var formattedDaySlice []string
 	requestDaySlice := strings.Fields(taskRequest.Days)
+	if len(requestDaySlice) > 7 {
+		http.Error(w, "Cannot get results for more than 7 days", http.StatusBadRequest)
+		return
+	}
+
 	for _, day := range requestDaySlice {
+		_, err := time.Parse("2006-01-02", day)
+		if err != nil {
+			continue
+		}
 		parts := strings.Split(day, "-")
 		if len(parts) == 3 {
 			month := parts[1]
@@ -128,7 +137,7 @@ func (handler *ServerHandler) SearchResultWSHandler(w http.ResponseWriter, r *ht
 		}
 	}
 
-	handler.Lambda.Responses = make(chan services.LambdaResponse, len(formattedDaySlice))
+	responses := make(chan services.LambdaResponse, len(formattedDaySlice))
 	var wg sync.WaitGroup
 	for _, date := range formattedDaySlice {
 		wg.Add(1)
@@ -140,16 +149,16 @@ func (handler *ServerHandler) SearchResultWSHandler(w http.ResponseWriter, r *ht
 				DateString:      date,
 			}
 
-			handler.Lambda.InvokeFunction(event)
+			handler.Lambda.InvokeFunction(event, responses)
 		}(date)
 	}
 
 	go func() {
 		wg.Wait()
-		close(handler.Lambda.Responses)
+		close(responses)
 	}()
 
-	for response := range handler.Lambda.Responses {
+	for response := range responses {
 		handler.Mutex.Lock()
 		if err := wsConn.WriteJSON(response); err != nil {
 			log.Println("Error sending response:", err)

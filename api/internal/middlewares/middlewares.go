@@ -59,9 +59,3 @@ func RequestThrottleMiddleware(rdb *redis.Client, limit int64) func(http.Handler
 		})
 	}
 }
-
-func SentryMiddleware() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	}
-}

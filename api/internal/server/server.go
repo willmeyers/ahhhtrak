@@ -36,6 +36,7 @@ func NewServer(address string) *Server {
 
 	lambda := &services.LambdaService{
 		Config: *cfg,
+		Cache:  rdb,
 	}
 
 	s := &Server{
