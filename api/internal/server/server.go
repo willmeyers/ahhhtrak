@@ -30,7 +30,7 @@ func NewServer(address string) *Server {
 
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     cfg.RedisAddr,
-		Password: "",
+		Password: cfg.RedisPassword,
 		DB:       0,
 	})
 

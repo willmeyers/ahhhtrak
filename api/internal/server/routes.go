@@ -26,6 +26,7 @@ func (s *Server) registerRoutes() {
 		HttpUpgrader: s.HttpUpgrader,
 		Lambda:       s.Lambda,
 		Mutex:        sync.Mutex{},
+		ProxyURL:     s.Config.ProxyURL,
 	}
 
 	s.Handle("/health", ApplyMiddleware(http.HandlerFunc(handler.HealthCheckHandler), middlewares...))

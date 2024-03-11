@@ -7,7 +7,7 @@ import (
 )
 
 func (handler *ServerHandler) HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
-	proxyURL, err := url.Parse("https://spu7ag1ehm:M2VtIjlCz1daijn25h@us.smartproxy.com:10001")
+	proxyURL, err := url.Parse(handler.ProxyURL)
 	if err != nil {
 		log.Println("Error parsing proxy URL:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)

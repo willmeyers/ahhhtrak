@@ -10,6 +10,7 @@ import (
 
 type ServerHandler struct {
 	Redis        *redis.Client
+	ProxyURL     string
 	HttpUpgrader *websocket.Upgrader
 	Lambda       *services.LambdaService
 	Mutex        sync.Mutex

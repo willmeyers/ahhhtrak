@@ -9,9 +9,11 @@ import (
 type Config struct {
 	ServerAddr            string
 	RedisAddr             string
+	RedisPassword         string
 	RequestThrottleLimit  int64
 	AwsRegion             string
 	AwsLambdaFunctionName string
+	ProxyURL              string
 }
 
 func LoadConfig() *Config {
@@ -25,6 +27,8 @@ func LoadConfig() *Config {
 		AwsRegion:             os.Getenv("AWS_REGION"),
 		ServerAddr:            os.Getenv("SERVER_ADDRESS"),
 		RedisAddr:             os.Getenv("REDIS_ADDRESS"),
+		RedisPassword:         os.Getenv("REDIS_PASSWORD"),
+		ProxyURL:              os.Getenv("PROXY_URL"),
 		RequestThrottleLimit:  requestLimit,
 	}
 }
