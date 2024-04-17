@@ -115,6 +115,7 @@ function App() {
     let newResults = [];
 
     for (const eventResponse of events) {
+      // @ts-expect-error body is string when event
       if (eventResponse.body.length === 0) {
         continue;
       }

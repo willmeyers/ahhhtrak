@@ -55,7 +55,7 @@ export const executeSearch = async ({
 
 export const searchResults = async ({ taskID }: { taskID: number }) => {
   const ws = new WebSocket(
-    `ws://${API_BASE_DOMAIN}/search:results?taskID=${taskID}`,
+    `wss://${API_BASE_DOMAIN}/search:results?taskID=${taskID}`,
   );
 
   return ws;

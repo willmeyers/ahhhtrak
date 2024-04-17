@@ -23,7 +23,7 @@ export const TickerText = ({ text }: { text: string }) => {
         nextCharCode = "A".charCodeAt(0);
       }
       const nextLetter = String.fromCharCode(nextCharCode);
-      // @ts-except-error: Ignore because TypeScript does not recognize `index` as type number in this context, but we're confident it's safe.
+      // @ts-expect-error Ignore because TypeScript does not recognize `index` as type number in this context, but we're confident it's safe.
       currentText[index] = nextLetter;
 
       if (nextLetter === targetText[index]) {
